@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>New Order Notification</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #e74c3c; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background: #f8f9fa; }
+        .order-details { background: white; padding: 15px; margin: 15px 0; border-radius: 5px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+        .total { font-weight: bold; font-size: 1.2em; color: #27ae60; }
+        .urgent { background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚨 New Order Alert</h1>
+            <p>A new order has been placed on Volt3dge</p>
+        </div>
+        
+        <div class="content">
+            <div class="urgent">
+                <strong>Action Required:</strong> A new order needs to be processed.
+            </div>
+            
+            <div class="order-details">
+                <h3>Order Information</h3>
+                <p><strong>Order Number:</strong> #{{ order.id }}</p>
+                <p><strong>Order Date:</strong> {{ order.created_at|date:"F d, Y H:i" }}</p>
+                <p><strong>Total Amount:</strong> <span class="total">₹{{ order.total }}</span></p>
+                <p><strong>Status:</strong> {{ order.get_status_display }}</p>
+            </div>
+            
+            <div class="order-details">
+                <h3>Customer Information</h3>
+                <p><strong>Name:</strong> {{ order.first_name }} {{ order.last_name }}</p>
+                <p><strong>Email:</strong> {{ order.email }}</p>
+                <p><strong>Phone:</strong> {{ order.phone }}</p>
+                <p><strong>Address:</strong><br>
+                   {{ order.address }}<br>
+                   {{ order.city }}, {{ order.postal_code }}
+                </p>
+            </div>
+            
+            <div class="order-details">
+                <h3>Items Ordered</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Quantity</th>
+                            <th>Price</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in order.items.all %}
+                        <tr>
+                            <td>{{ item.product.name }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>₹{{ item.price }}</td>
+                            <td>₹{{ item.get_cost }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <p><strong>Next Steps:</strong></p>
+            <ul>
+                <li>Process the order in the admin panel</li>
+                <li>Check inventory for all items</li>
+                <li>Prepare items for shipping</li>
+                <li>Update order status</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

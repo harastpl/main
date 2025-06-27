@@ -1,0 +1,196 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Analytics Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-container" style="padding: 20px;">
+    <h1>Business Intelligence Dashboard</h1>
+    
+    <!-- Key Metrics Cards -->
+    <div class="row" style="display: flex; gap: 20px; margin-bottom: 30px;">
+        <div class="metric-card" style="flex: 1; background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #007bff;">
+            <h3 style="margin: 0; color: #007bff;">{{ active_carts }}</h3>
+            <p style="margin: 5px 0 0 0; color: #6c757d;">Active Carts</p>
+        </div>
+        <div class="metric-card" style="flex: 1; background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #28a745;">
+            <h3 style="margin: 0; color: #28a745;">{{ recent_views|length }}</h3>
+            <p style="margin: 5px 0 0 0; color: #6c757d;">Recent Views</p>
+        </div>
+        <div class="metric-card" style="flex: 1; background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #ffc107;">
+            <h3 style="margin: 0; color: #ffc107;">{{ products_in_carts|length }}</h3>
+            <p style="margin: 5px 0 0 0; color: #6c757d;">Products in Carts</p>
+        </div>
+    </div>
+
+    <!-- Product Views Analytics -->
+    <div class="analytics-section" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 30px;">
+        <h2 style="border-bottom: 2px solid #007bff; padding-bottom: 10px;">Most Viewed Products</h2>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Product Name</th>
+                        <th>View Count</th>
+                        <th>Popularity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in product_views %}
+                        <tr>
+                            <td><strong>{{ product.product__name }}</strong></td>
+                            <td>{{ product.view_count }}</td>
+                            <td>
+                                <div style="background: #e9ecef; border-radius: 10px; height: 20px; position: relative;">
+                                    <div style="background: #007bff; height: 100%; border-radius: 10px; width: {% widthratio product.view_count product_views.0.view_count 100 %}%;"></div>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center text-muted">No product views recorded yet</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Products in Carts -->
+    <div class="analytics-section" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 30px;">
+        <h2 style="border-bottom: 2px solid #28a745; padding-bottom: 10px;">Products in Active Carts</h2>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Product Name</th>
+                        <th>Total Quantity</th>
+                        <th>Number of Carts</th>
+                        <th>Conversion Potential</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in products_in_carts %}
+                        <tr>
+                            <td><strong>{{ product.product__name }}</strong></td>
+                            <td>{{ product.total_quantity }}</td>
+                            <td>{{ product.cart_count }}</td>
+                            <td>
+                                <span class="badge" style="background: {% if product.total_quantity > 10 %}#28a745{% elif product.total_quantity > 5 %}#ffc107{% else %}#dc3545{% endif %}; color: white;">
+                                    {% if product.total_quantity > 10 %}High{% elif product.total_quantity > 5 %}Medium{% else %}Low{% endif %}
+                                </span>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">No products in carts currently</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- User Cart Details -->
+    <div class="analytics-section" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 30px;">
+        <h2 style="border-bottom: 2px solid #ffc107; padding-bottom: 10px;">Active User Carts</h2>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Items in Cart</th>
+                        <th>Cart Value</th>
+                        <th>Last Updated</th>
+                        <th>Products</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cart in user_carts %}
+                        <tr>
+                            <td>
+                                {% if cart.user %}
+                                    <strong>{{ cart.user.username }}</strong>
+                                    <br><small class="text-muted">{{ cart.user.email }}</small>
+                                {% else %}
+                                    <em>Anonymous User</em>
+                                    <br><small class="text-muted">{{ cart.session_key|truncatechars:10 }}</small>
+                                {% endif %}
+                            </td>
+                            <td>{{ cart.total_items }}</td>
+                            <td><strong>₹{{ cart.total_price }}</strong></td>
+                            <td>{{ cart.updated_at|timesince }} ago</td>
+                            <td>
+                                {% for item in cart.cartitem_set.all %}
+                                    <small class="badge bg-secondary me-1">{{ item.product.name }} ({{ item.quantity }})</small>
+                                {% endfor %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted">No active carts found</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Recent Product Views -->
+    <div class="analytics-section" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h2 style="border-bottom: 2px solid #dc3545; padding-bottom: 10px;">Recent Product Views</h2>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Viewer</th>
+                        <th>Time</th>
+                        <th>IP Address</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for view in recent_views %}
+                        <tr>
+                            <td><strong>{{ view.product.name }}</strong></td>
+                            <td>
+                                {% if view.user %}
+                                    {{ view.user.username }}
+                                {% else %}
+                                    <em>Anonymous</em>
+                                {% endif %}
+                            </td>
+                            <td>{{ view.viewed_on|timesince }} ago</td>
+                            <td><code>{{ view.ip_address|default:"N/A" }}</code></td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">No recent views</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+.table {
+    margin-bottom: 0;
+}
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+}
+.badge {
+    font-size: 0.75em;
+}
+.analytics-section {
+    transition: transform 0.2s ease;
+}
+.analytics-section:hover {
+    transform: translateY(-2px);
+}
+</style>
+{% endblock %}

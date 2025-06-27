@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ product.name }} - Volt3dge{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'product_list' %}">Products</a></li>
+            <li class="breadcrumb-item active">{{ product.name }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- Product Image -->
+        <div class="col-md-6">
+            <div class="card">
+                <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}" 
+                     style="height: 400px; object-fit: cover;">
+            </div>
+        </div>
+
+        <!-- Product Details -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h1 class="card-title">{{ product.name }}</h1>
+                    
+                    <div class="mb-3">
+                        <span class="badge bg-primary">{{ product.category.name }}</span>
+                        {% if product.stock <= 5 and product.stock > 0 %}
+                            <span class="badge bg-warning">Low Stock ({{ product.stock }} left)</span>
+                        {% elif product.stock == 0 %}
+                            <span class="badge bg-danger">Out of Stock</span>
+                        {% else %}
+                            <span class="badge bg-success">In Stock ({{ product.stock }} available)</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="price mb-3">
+                        <h2 class="text-success">₹{{ product.price }}</h2>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5>Description</h5>
+                        <p class="card-text">{{ product.description|linebreaks }}</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted">
+                            <i class="fas fa-eye"></i> {{ product.view_count }} people viewed this product
+                        </small>
+                    </div>
+
+                    <!-- Add to Cart Form -->
+                    {% if product.stock > 0 %}
+                        <form method="post" action="{% url 'cart:add' product.id %}" class="mb-3">
+                            {% csrf_token %}
+                            <div class="row align-items-end">
+                                <div class="col-md-4">
+                                    <label for="quantity" class="form-label">Quantity</label>
+                                    <input type="number" class="form-control" id="quantity" name="quantity" 
+                                           value="1" min="1" max="{{ product.stock }}">
+                                </div>
+                                <div class="col-md-8">
+                                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                                        <i class="fas fa-cart-plus"></i> Add to Cart
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            This product is currently out of stock.
+                        </div>
+                    {% endif %}
+
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'product_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Products
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Related Products -->
+    {% if related_products %}
+        <div class="mt-5">
+            <h3>Related Products</h3>
+            <div class="row">
+                {% for related_product in related_products %}
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="card h-100">
+                            <img src="{{ related_product.image.url }}" class="card-img-top" 
+                                 alt="{{ related_product.name }}" style="height: 200px; object-fit: cover;">
+                            <div class="card-body d-flex flex-column">
+                                <h6 class="card-title">{{ related_product.name }}</h6>
+                                <p class="card-text text-muted small flex-grow-1">
+                                    {{ related_product.description|truncatewords:10 }}
+                                </p>
+                                <div class="mt-auto">
+                                    <div class="price mb-2">₹{{ related_product.price }}</div>
+                                    <a href="{% url 'product_detail' pk=related_product.pk %}" 
+                                       class="btn btn-outline-primary btn-sm w-100">
+                                        View Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

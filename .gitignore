@@ -1,0 +1,16 @@
+myenv/
+*.pyc
+__pycache__/
+*.sqlite3
+.env
+*.log
+*.pot
+*.py[co]
+*.sw[po]
+*.bak
+*.orig
+*.mo
+*.db
+*.DS_Store
+/media/
+/staticfiles/
