@@ -1,0 +1,224 @@
+{% extends 'base.html' %}
+
+{% block title %}My STL Files - Volt3dge{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="fas fa-cube"></i> My STL Files</h2>
+            <p class="text-muted">Manage your uploaded 3D models</p>
+        </div>
+        <a href="{% url 'stl_uploads:upload' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Upload New STL
+        </a>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-6">
+                    <input type="text" class="form-control" name="q" placeholder="Search files..." 
+                           value="{{ query }}">
+                </div>
+                <div class="col-md-4">
+                    <select name="status" class="form-select">
+                        <option value="">All Status</option>
+                        {% for value, label in status_choices %}
+                            <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-outline-primary w-100">
+                        <i class="fas fa-search"></i> Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Search Results Info -->
+    {% if query %}
+        <div class="alert alert-info">
+            <i class="fas fa-search"></i> Search results for "<strong>{{ query }}</strong>" 
+            ({{ page_obj.paginator.count }} file{{ page_obj.paginator.count|pluralize }} found)
+        </div>
+    {% endif %}
+
+    <!-- STL Files Grid -->
+    <div class="row">
+        {% for stl_file in stl_files %}
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card h-100">
+                    <!-- Preview Image -->
+                    <div class="position-relative">
+                        {% if stl_file.preview_image %}
+                            <img src="{% url 'stl_uploads:preview' stl_file.pk %}" 
+                                 class="card-img-top" alt="{{ stl_file.name }}" 
+                                 style="height: 200px; object-fit: cover;">
+                        {% else %}
+                            <div class="card-img-top d-flex align-items-center justify-content-center bg-light" 
+                                 style="height: 200px;">
+                                <i class="fas fa-cube fa-3x text-muted"></i>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Status Badge -->
+                        <span class="badge bg-{{ stl_file.get_status_color }} position-absolute top-0 end-0 m-2">
+                            {{ stl_file.get_status_display }}
+                        </span>
+                    </div>
+                    
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">{{ stl_file.name }}</h5>
+                        
+                        {% if stl_file.description %}
+                            <p class="card-text text-muted small">
+                                {{ stl_file.description|truncatewords:15 }}
+                            </p>
+                        {% endif %}
+                        
+                        <!-- File Info -->
+                        <div class="mb-3">
+                            <small class="text-muted">
+                                <i class="fas fa-file"></i> {{ stl_file.file_size_mb }} MB
+                                <br>
+                                <i class="fas fa-calendar"></i> {{ stl_file.created_at|date:"M d, Y" }}
+                            </small>
+                        </div>
+                        
+                        <!-- Processing Info -->
+                        {% if stl_file.status == 'processed' %}
+                            <div class="mb-3">
+                                {% if stl_file.estimated_print_time %}
+                                    <small class="text-success">
+                                        <i class="fas fa-clock"></i> {{ stl_file.estimated_print_time }}
+                                    </small><br>
+                                {% endif %}
+                                {% if stl_file.estimated_cost %}
+                                    <small class="text-success">
+                                        <i class="fas fa-rupee-sign"></i> ₹{{ stl_file.estimated_cost }}
+                                    </small>
+                                {% endif %}
+                            </div>
+                        {% elif stl_file.status == 'processing' %}
+                            <div class="mb-3">
+                                <small class="text-warning">
+                                    <i class="fas fa-spinner fa-spin"></i> Processing...
+                                </small>
+                            </div>
+                        {% elif stl_file.status == 'failed' %}
+                            <div class="mb-3">
+                                <small class="text-danger">
+                                    <i class="fas fa-exclamation-triangle"></i> Processing failed
+                                </small>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Actions -->
+                        <div class="mt-auto">
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'stl_uploads:detail' stl_file.pk %}" 
+                                   class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-eye"></i> View Details
+                                </a>
+                                
+                                {% if stl_file.status == 'processed' and stl_file.approved_for_printing %}
+                                    <a href="{% url 'stl_uploads:create_order' stl_file.pk %}" 
+                                       class="btn btn-success btn-sm">
+                                        <i class="fas fa-print"></i> Order Print
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <i class="fas fa-cube fa-3x text-muted mb-3"></i>
+                    <h4>No STL files found</h4>
+                    {% if query or status_filter %}
+                        <p class="text-muted">Try adjusting your search or filter criteria.</p>
+                        <a href="{% url 'stl_uploads:list' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-times"></i> Clear Filters
+                        </a>
+                    {% else %}
+                        <p class="text-muted">Upload your first STL file to get started!</p>
+                        <a href="{% url 'stl_uploads:upload' %}" class="btn btn-primary">
+                            <i class="fas fa-upload"></i> Upload STL File
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+        <nav aria-label="STL files pagination" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if query %}&q={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    </li>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                                {{ num }}
+                            </a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+</div>
+
+<script>
+// Auto-refresh processing files
+document.addEventListener('DOMContentLoaded', function() {
+    const processingFiles = document.querySelectorAll('[data-status="processing"]');
+    
+    if (processingFiles.length > 0) {
+        // Refresh page every 30 seconds if there are processing files
+        setTimeout(() => {
+            window.location.reload();
+        }, 30000);
+    }
+});
+</script>
+{% endblock %}

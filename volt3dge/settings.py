@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'core',
     'cart',
     'analytics',
+    'stl_uploads',
 ]
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
@@ -165,3 +166,39 @@ GOOGLE_SHEETS_NAME = 'Volt3dge Orders'
 # Session settings
 SESSION_COOKIE_AGE = 86400  # 24 hours
 SESSION_SAVE_EVERY_REQUEST = True
+
+# STL Processing settings
+ORCA_SLICER_PATH = 'orca-slicer'  # Path to OrcaSlicer executable
+# For Windows: ORCA_SLICER_PATH = r'C:\Program Files\OrcaSlicer\orca-slicer.exe'
+# For macOS: ORCA_SLICER_PATH = '/Applications/OrcaSlicer.app/Contents/MacOS/OrcaSlicer'
+
+# File upload settings
+FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50MB
+
+# Logging configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'logs' / 'stl_processing.log',
+        },
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'stl_uploads': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}
+
+# Create logs directory if it doesn't exist
+os.makedirs(BASE_DIR / 'logs', exist_ok=True)

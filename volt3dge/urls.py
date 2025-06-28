@@ -32,6 +32,7 @@ urlpatterns = [
     path('cart/', include('cart.urls')),
     path('order/create/', order_views.order_create, name='order_create'),
     path('order/<int:order_id>/', order_views.order_detail, name='order_detail'),
+    path('stl/', include('stl_uploads.urls')),
 ]
 
 if settings.DEBUG:

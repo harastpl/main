@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Order Print - {{ stl_file.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'stl_uploads:list' %}">STL Files</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'stl_uploads:detail' stl_file.pk %}">{{ stl_file.name }}</a></li>
+            <li class="breadcrumb-item active">Order Print</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="fas fa-print"></i> Order 3D Print</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <h6 class="mb-3">Order Details</h6>
+                        {{ form.quantity|as_crispy_field }}
+                        
+                        <h6 class="mt-4 mb-3">Customer Information</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.customer_name|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.customer_email|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        {{ form.customer_phone|as_crispy_field }}
+                        {{ form.delivery_address|as_crispy_field }}
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{% url 'stl_uploads:detail' stl_file.pk %}" 
+                               class="btn btn-outline-secondary me-md-2">
+                                <i class="fas fa-arrow-left"></i> Back
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-check"></i> Place Order
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Summary -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Order Summary</h5>
+                </div>
+                <div class="card-body">
+                    <!-- STL File Info -->
+                    <div class="d-flex align-items-center mb-3">
+                        {% if stl_file.preview_image %}
+                            <img src="{% url 'stl_uploads:preview' stl_file.pk %}" 
+                                 alt="{{ stl_file.name }}" class="me-3"
+                                 style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;">
+                        {% else %}
+                            <div class="me-3 d-flex align-items-center justify-content-center bg-light" 
+                                 style="width: 60px; height: 60px; border-radius: 8px;">
+                                <i class="fas fa-cube text-muted"></i>
+                            </div>
+                        {% endif %}
+                        <div>
+                            <h6 class="mb-0">{{ stl_file.name }}</h6>
+                            <small class="text-muted">{{ stl_file.get_print_quality_display }}</small>
+                        </div>
+                    </div>
+
+                    <!-- Print Settings -->
+                    <div class="mb-3">
+                        <h6>Print Settings</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td>Quality:</td>
+                                <td>{{ stl_file.get_print_quality_display }}</td>
+                            </tr>
+                            <tr>
+                                <td>Infill:</td>
+                                <td>{{ stl_file.infill_percentage }}%</td>
+                            </tr>
+                            <tr>
+                                <td>Supports:</td>
+                                <td>
+                                    {% if stl_file.supports_needed %}
+                                        <i class="fas fa-check text-success"></i> Yes
+                                    {% else %}
+                                        <i class="fas fa-times text-danger"></i> No
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Estimates -->
+                    {% if stl_file.estimated_print_time or stl_file.estimated_cost %}
+                        <div class="mb-3">
+                            <h6>Estimates</h6>
+                            {% if stl_file.estimated_print_time %}
+                                <p class="mb-1">
+                                    <i class="fas fa-clock text-primary"></i> 
+                                    {{ stl_file.estimated_print_time }}
+                                </p>
+                            {% endif %}
+                            {% if stl_file.estimated_cost %}
+                                <p class="mb-1">
+                                    <i class="fas fa-rupee-sign text-success"></i> 
+                                    ₹{{ stl_file.estimated_cost }} per piece
+                                </p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                    <!-- Cost Calculation -->
+                    <div class="border-top pt-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Base Cost:</span>
+                            <span>₹{{ stl_file.estimated_cost|default:"500" }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Quantity:</span>
+                            <span id="quantity-display">1</span>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between">
+                            <strong>Total:</strong>
+                            <strong class="text-success" id="total-cost">
+                                ₹{{ stl_file.estimated_cost|default:"500" }}
+                            </strong>
+                        </div>
+                    </div>
+
+                    <!-- Important Notes -->
+                    <div class="alert alert-info mt-3">
+                        <small>
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Note:</strong> Final cost may vary based on actual material usage and complexity.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const quantityInput = document.getElementById('id_quantity');
+    const quantityDisplay = document.getElementById('quantity-display');
+    const totalCostDisplay = document.getElementById('total-cost');
+    const baseCost = {{ stl_file.estimated_cost|default:"500" }};
+
+    function updateTotal() {
+        const quantity = parseInt(quantityInput.value) || 1;
+        const total = baseCost * quantity;
+        
+        quantityDisplay.textContent = quantity;
+        totalCostDisplay.textContent = '₹' + total;
+    }
+
+    quantityInput.addEventListener('input', updateTotal);
+    updateTotal(); // Initial calculation
+});
+</script>
+{% endblock %}

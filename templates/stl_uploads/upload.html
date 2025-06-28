@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Upload STL File - Volt3dge{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="fas fa-upload"></i> Upload Your STL File</h4>
+                    <p class="mb-0 text-muted">Upload your 3D model for custom printing</p>
+                </div>
+                <div class="card-body">
+                    <!-- Upload Instructions -->
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle"></i> Upload Guidelines:</h6>
+                        <ul class="mb-0">
+                            <li>Only STL files are accepted</li>
+                            <li>Maximum file size: 50MB</li>
+                            <li>Your file will be processed automatically</li>
+                            <li>Processing may take a few minutes</li>
+                        </ul>
+                    </div>
+
+                    <form method="post" enctype="multipart/form-data" id="stl-upload-form">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-12">
+                                {{ form.name|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-12">
+                                {{ form.description|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="mb-3">
+                                    <label for="{{ form.stl_file.id_for_label }}" class="form-label">STL File *</label>
+                                    {{ form.stl_file }}
+                                    <div class="form-text">Select your STL file (max 50MB)</div>
+                                    <div id="file-info" class="mt-2" style="display: none;">
+                                        <small class="text-muted">
+                                            <i class="fas fa-file"></i> 
+                                            <span id="file-name"></span> 
+                                            (<span id="file-size"></span>)
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h6 class="mt-4 mb-3">Print Settings</h6>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.print_quality|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.infill_percentage|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-check mb-3">
+                                    {{ form.supports_needed }}
+                                    <label class="form-check-label" for="{{ form.supports_needed.id_for_label }}">
+                                        Add support structures (recommended for overhangs)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'stl_uploads:list' %}" class="btn btn-outline-secondary me-md-2">
+                                <i class="fas fa-arrow-left"></i> Back to Files
+                            </a>
+                            <button type="submit" class="btn btn-primary" id="upload-btn">
+                                <i class="fas fa-upload"></i> Upload & Process
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Processing Info -->
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h6><i class="fas fa-cogs"></i> What happens after upload?</h6>
+                    <div class="row">
+                        <div class="col-md-3 text-center">
+                            <i class="fas fa-upload fa-2x text-primary mb-2"></i>
+                            <h6>1. Upload</h6>
+                            <small class="text-muted">Your STL file is uploaded securely</small>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <i class="fas fa-cog fa-2x text-warning mb-2"></i>
+                            <h6>2. Process</h6>
+                            <small class="text-muted">OrcaSlicer analyzes your model</small>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <i class="fas fa-eye fa-2x text-info mb-2"></i>
+                            <h6>3. Preview</h6>
+                            <small class="text-muted">Generate preview and estimates</small>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <i class="fas fa-print fa-2x text-success mb-2"></i>
+                            <h6>4. Print</h6>
+                            <small class="text-muted">Ready for 3D printing</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('{{ form.stl_file.id_for_label }}');
+    const fileInfo = document.getElementById('file-info');
+    const fileName = document.getElementById('file-name');
+    const fileSize = document.getElementById('file-size');
+    const uploadBtn = document.getElementById('upload-btn');
+    const form = document.getElementById('stl-upload-form');
+
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            fileInfo.style.display = 'block';
+            
+            // Validate file
+            if (!file.name.toLowerCase().endsWith('.stl')) {
+                showMessage('Please select an STL file.', 'danger');
+                fileInput.value = '';
+                fileInfo.style.display = 'none';
+                return;
+            }
+            
+            if (file.size > 50 * 1024 * 1024) {
+                showMessage('File size cannot exceed 50MB.', 'danger');
+                fileInput.value = '';
+                fileInfo.style.display = 'none';
+                return;
+            }
+        } else {
+            fileInfo.style.display = 'none';
+        }
+    });
+
+    form.addEventListener('submit', function(e) {
+        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+        uploadBtn.disabled = true;
+    });
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function showMessage(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        const container = document.querySelector('.container');
+        container.insertBefore(alertDiv, container.firstChild);
+        
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 5000);
+    }
+});
+</script>
+{% endblock %}
