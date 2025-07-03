@@ -1,9 +1,10 @@
 <?php
 class Database {
+    // DirectAdmin typically uses this format: username_databasename
     private $host = 'localhost';
-    private $db_name = 'volt3dge_db';
-    private $username = 'your_db_username';
-    private $password = 'your_db_password';
+    private $db_name = 'voltdgec_volt3dge'; // Change this to match DirectAdmin format
+    private $username = 'voltdgec_admin';   // Your DirectAdmin MySQL username
+    private $password = 'your_password';    // Your DirectAdmin MySQL password
     private $conn;
 
     public function getConnection() {
